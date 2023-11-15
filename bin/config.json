@@ -5,18 +5,18 @@
   "num_servers": "256",
   "one_hop_delay": "5",
   "one_hop_radius": "4.0",
-  "msg_drop_rate": "0.0",
+  "msg_drop_rate": "0.05",
   "granularity": "200",
   "end_time": "100000",
   "event_check_timeout": "500",
   "crit_duration": "200",
-  "conc_requesters": "30",
+  "conc_requesters": "256",
   "verbose": "0",
   "from_trace": "true",
   "time_distro": "exponential",
-  "spatial_distro": "zipfian",
-  "ir_ratio": "0.05",
+  "spatial_distro": "uniform",
+  "ir_ratio": "1.0",
   "batched": "false",
   "churn_ratio": "0.5",
-  "use_churn": "false"
+  "use_churn": "true"
 }

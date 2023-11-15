@@ -4,9 +4,9 @@ import numpy as np
 import matplotlib.ticker as mticker
 import sys
 
-MODE = "waitTimes"
+# MODE = "waitTimes"
 # MODE = "e2eMsgTotal"
-# MODE = "e2eMsgSizeTotal"
+MODE = "e2eMsgSizeTotal"
 # MODE = "h2hMsgTotal"
 # MODE = "h2hMsgSizeTotal"
 
@@ -29,15 +29,10 @@ if param not in param_options:
 def graphline(temporal,spatial,param=param):
 
     colors = {
-        "Poisson,uniform" : "red",
-        "Poisson,zipfian" : "orange",
-        "Weibull,zipfian" : "blue",
-        "Weibull,uniform" : "green"
-    }
-
-    abbrev = {
-        "P" : "Poisson",
-        "W" : "Weibull"
+        "exponential,uniform" : "red",
+        "exponential,zipfian" : "orange",
+        "weibull,zipfian" : "blue",
+        "weibull,uniform" : "green"
     }
 
     folders = {
@@ -56,7 +51,8 @@ def graphline(temporal,spatial,param=param):
     temp=""
     d = {}
         
-    with open(f"../{batched_terms[batched]}{'/5delay_rerun' if param!='churn_ratio' else ''}/{folders[param]}/{temporal}_{spatial}.txt") as f:
+    # with open(f"../{batched_terms[batched]}{'/5delay_rerun' if param!='churn_ratio' else ''}/{folders[param]}/{temporal}_{spatial}.txt") as f:
+    with open(f"../resubmission_data/distributions/{param}/{temporal}_{spatial}.txt") as f:
         for line in f:
             if "}{" in line or "num_serv" in line:
                 temp+="}"
@@ -74,6 +70,7 @@ def graphline(temporal,spatial,param=param):
                         norm_ave = sum(lst)/(len(lst))
                     norm_ave/=1000 # conversion to seconds
                 else:
+                    # norm_ave = a['networkMetric'][MODE] / len(lst)
                     norm_ave = a['networkMetric'][MODE] / n / len(lst)
                 
                 cr = float(a[param])
@@ -97,6 +94,7 @@ def graphline(temporal,spatial,param=param):
             norm_ave/=1000 # ms to seconds
         else:
             norm_ave = a['networkMetric'][MODE] / n / len(lst)
+            # norm_ave = a['networkMetric'][MODE] / len(lst)
 
 
         cr = float(a[param])
@@ -141,14 +139,14 @@ def graphline(temporal,spatial,param=param):
     # plt.bar(inds,_25ths-mins,width=thin,bottom=mins)
     # plt.plot(inds,aves)
     # plt.scatter(inds,aves,label=f"{temporal}_{spatial}")
-    keystring = f"{abbrev[temporal]},{spatial}"
-    if temporal=="W":
+    keystring = f"{temporal},{spatial}"
+    if temporal=="weibull":
         lstyle = "dashed"
         linewidth=2
     else:
         lstyle = "solid"
         linewidth = 3
-    if temporal=="W" and spatial=="zipfian":
+    if temporal=="weibull" and spatial=="zipfian":
         print(inds)
         print(aves)
     plt.plot(inds,aves,'-o',label=keystring,color=f"{colors[keystring]}",)
@@ -156,7 +154,8 @@ def graphline(temporal,spatial,param=param):
     # plt.xlabel(inds)
 
 
-for temporal in ["P","W"]:
+# for temporal in ["exponential"]:
+for temporal in ["exponential","weibull"]:
     for spatial in ["uniform","zipfian"]:
         try:
             graphline(temporal,spatial)
@@ -175,20 +174,16 @@ else:
     # pass
 
 # plt.xscale("log")
-if param=="ir_ratio" and MODE!="waitTimes":
+if param=="ir_ratio" and MODE=="e2eMsgTotal":
     plt.ylim(ymax = 4.9)
+if param == "N" and MODE=="e2eMsgTotal":
+    plt.ylim(ymax = 4)
 
-
-
-# plt.xlabel('N')
-# if NORMALIZE:
-#     plt.ylabel(f"{MODE} (Normalized)")
-# else:
-    # plt.ylabel(f"{MODE}")
 
 mode_display = {
     "waitTimes" : "Wait Times",
-    "e2eMsgTotal" : "End-to-End Message Count"
+    "e2eMsgTotal" : "End-to-End Message Count",
+    "e2eMsgSizeTotal" : "End-to-End Message Size"
 }
 
 

@@ -3,13 +3,15 @@ if [ ! -f 'run.sh' ]; then
   exit
 fi
 
-# num_run=2
-num_run=50
+num_run=100
+# num_run=50
 num_server=256
 config_name="config.json"
 churn_ratios=(0.01 0.05 0.1 0.5)
-s_distros=("zipfian" "uniform")
-t_distros=("P" "W")
+s_distros=("uniform")
+# s_distros=("zipfian" "uniform")
+t_distros=("exponential")
+# t_distros=("exponential" "weibull")
 
 
 # clear existing flags
@@ -22,12 +24,10 @@ for spatial in ${s_distros[@]}; do
     tmp="$(mktemp)"
     jq --arg spatial "$spatial" '.spatial_distro = $spatial' $config_name > "$tmp"
     mv "$tmp" $config_name
-    for distro in ${t_distros[@]}; do 
-        trace_path="../../YCSB/analyze/traces/${distro}.txt"
-        tmp="$(mktemp)"
-        jq --arg trace_path "$trace_path" '.trace_file = $trace_path' $config_name > "$tmp"
+    for time in ${t_distros[@]}; do 
+        jq --arg time "$time" '.time_distro = $time' $config_name > "$tmp"
         mv "$tmp" $config_name
-        echo "" > "../analyze/outputs/${distro}_${spatial}.txt"
+        echo "" > "../analyze/outputs/${time}_${spatial}.txt"
         for (( i=1; i<=$num_run; i++ )); do
             for churn_rate in ${churn_ratios[@]}; do
                 # modify the churn ratio in our config
@@ -48,7 +48,7 @@ for spatial in ${s_distros[@]}; do
                 nice -n 9 bash -c "./run.sh ${config_name}" & # run camera
                 # ./run.sh $config_name & # run camera 
                 wait
-                cat stats.json >> "../analyze/outputs/${distro}_${spatial}.txt"
+                cat stats.json >> "../analyze/outputs/${time}_${spatial}.txt"                
             done
         done
     done

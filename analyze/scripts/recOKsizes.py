@@ -5,11 +5,13 @@ import json
 d = { rate: list() for rate in [0.05,0.25,0.5,1.0,3.0]}
 
 # fname = "measure_recOK"
-fname = "RA_diff"
+
+
+fname = "../resubmission_data/distributions/no_drop/spatial"
 
 
 temp=""
-with open(f"../outputs/{fname}.txt") as f:
+with open(fname) as f:
     for line in f:
         if "}{" in line or "num_serv" in line:
             temp+="}"
