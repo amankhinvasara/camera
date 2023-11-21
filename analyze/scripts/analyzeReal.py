@@ -4,9 +4,9 @@ import numpy as np
 import matplotlib.ticker as mticker
 import sys
 
-# MODE = "waitTimes"
+MODE = "waitTimes"
 # MODE = "e2eMsgTotal"
-MODE = "e2eMsgSizeTotal"
+# MODE = "e2eMsgSizeTotal"
 # MODE = "h2hMsgTotal"
 # MODE = "h2hMsgSizeTotal"
 

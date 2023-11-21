@@ -37,14 +37,6 @@ public class NetworkMetric {
         e2eMsgSizes.get(src).put(dst, e2eMsgSizes.get(src).getOrDefault(dst, 0) + size);
     }
 
-    public static void RAe2eAdjust(Address src, Address dst, Set<Address> recentlyOKed) {
-        int size = Message.getByteSize(recentlyOKed);
-        if (size < 0) {
-            System.out.println("Size was negative!");
-        } else {
-            RAe2eSizeAdjustments.get(src).put(dst, RAe2eSizeAdjustments.get(src).getOrDefault(dst, 0) - size);
-        }
-    }
 
     public static void h2hRecord(Address src, Address dst, int size) {
         h2hMsgs.get(src).put(dst, h2hMsgs.get(src).getOrDefault(dst, 0) + 1);

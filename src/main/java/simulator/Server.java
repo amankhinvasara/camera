@@ -10,6 +10,7 @@ import simulator.event.*;
 import utils.*;
 import utils.metric.AlgorithmMetric;
 import utils.metric.NetworkMetric;
+import utils.metric.QualityMetric;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,7 +28,6 @@ public class Server {
     private Integer queuedReqs = 0;
     private RequestPayload currRequest;
     private final Set<RequestPayload> deferred = ConcurrentHashMap.newKeySet();
-    private final Set<Address> recentlyOKed = ConcurrentHashMap.newKeySet();
     private final Set<Address> pendingOKs = ConcurrentHashMap.newKeySet();
     private final Set<Long> req_times = ConcurrentHashMap.newKeySet();
 
@@ -42,7 +42,6 @@ public class Server {
 
     public void processEvent(Event event) {
         Logging.log(Level.FINER, id, "Processing event: " + event.toString());
-        max_rec_OK = Math.max(max_rec_OK,recentlyOKed.size());
         if (event.getType() == EventType.RECEIVE_MSG) {
             processMsg(((ReceiveMsgEvent) event).getMsg());
         } else if (event.getType() == EventType.INITATE_REQ){
@@ -50,14 +49,14 @@ public class Server {
         } else if (event.getType() == EventType.EXIT_CRIT) {
              // EXIT
             //  System.out.println("Exiting critical section at node " + id);
-             AlgorithmMetric.setFirstExitTime(LogicalTime.time);
-             MessagePayload release = new ReleasePayload(currSeqNum,id);
-             Message rel_msg = new Message(id,id,release);
-             myState = AlgoState.NONE;
-             Network.multicast(rel_msg, membership.getAllNodes(true));
-
-             // send OK to deferred folks
-             OkPayload ok_p = new OkPayload(recentlyOKed);
+            //System.out.println("beep boop")
+            AlgorithmMetric.setFirstExitTime(LogicalTime.time);
+            MessagePayload release = new ReleasePayload(currSeqNum,id);
+            Message rel_msg = new Message(id,id,release);
+            QualityMetric.updateCount(--LogicalTime.CSct, LogicalTime.time);
+            myState = AlgoState.NONE;
+            Network.multicast(rel_msg, membership.getAllNodes(true));
+             OkPayload ok_p = new OkPayload();
              for (RequestPayload waiting : deferred) {
                  Message ok_message = new Message(id,waiting.getId(),ok_p);
                  Network.unicast(ok_message);
@@ -104,29 +103,13 @@ public class Server {
                 deferred.add(req);
             }
             else {
-                OkPayload ok_p = new OkPayload(recentlyOKed);
-                recentlyOKed.add(req.getId());
+                OkPayload ok_p = new OkPayload();
                 Message ok_message = new Message(id,req.getId(),ok_p);
                 Network.unicast(ok_message);
-
-                // measure base RA performance separately
-                NetworkMetric.RAe2eAdjust(id, req.getId(), recentlyOKed);
-
-                // System.out.println("Just sent OK to " + req.getId() + " from server " + id);
             }
 
         } else if (payload.getType() == MessageType.OK) {
             MessagePayload req = new RequestPayload(currSeqNum,id,AlgorithmPath.FAST);
-            // System.out.println("Size of recentlyOKed upon receiving the OK message is " + ((OkPayload) payload).getRecentlyOKed().size());
-            for (Address node : ((OkPayload) payload).getRecentlyOKed()) {
-                if (!membership.getAllNodes(false).contains(node)) {
-                    // we don't know ab some node that was recentlyOKed
-                    pendingOKs.add(node);
-                    membership.addNodeToAll(node);
-                    Message req_msg = new Message(id, node, req);
-                    Network.unicast(req_msg);
-                }
-            }
             pendingOKs.remove(msg.getSrc());
             // System.out.println("Now only waiting for " + pendingOKs.size() + " OKs");
             
@@ -138,7 +121,7 @@ public class Server {
             }
         } else if (payload.getType() == MessageType.RELEASE) {
             // process release;
-            recentlyOKed.remove(((ReleasePayload)payload).getReleaser());
+            // recentlyOKed.remove(((ReleasePayload)payload).getReleaser());
         }
         else {
             throw new RuntimeException("Message payload type " + payload.getType() + " not found!!!");
@@ -205,6 +188,7 @@ public class Server {
         }
         AlgorithmMetric.setSecondEnterTime(LogicalTime.time);
         myState = AlgoState.HELD;
+        QualityMetric.updateCount(++LogicalTime.CSct, LogicalTime.time);
         ExitCritEvent exit = new ExitCritEvent(LogicalTime.time + Config.critDuration, id);
         EventService.addEvent(exit);
     }
