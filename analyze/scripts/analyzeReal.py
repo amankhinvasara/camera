@@ -4,8 +4,8 @@ import numpy as np
 import matplotlib.ticker as mticker
 import sys
 
-MODE = "waitTimes"
-# MODE = "e2eMsgTotal"
+# MODE = "waitTimes"
+MODE = "e2eMsgTotal"
 # MODE = "e2eMsgSizeTotal"
 # MODE = "h2hMsgTotal"
 # MODE = "h2hMsgSizeTotal"
@@ -153,6 +153,10 @@ def graphline(temporal,spatial,param=param):
     # plt.plot(inds,aves,label=keystring,color=f"{colors[keystring]}",linestyle=lstyle,linewidth=linewidth)
     # plt.xlabel(inds)
 
+plt.figure(figsize=(6.4,2.1))
+plt.tight_layout()
+plt.subplots_adjust(bottom=0.21)
+
 
 # for temporal in ["exponential"]:
 for temporal in ["exponential","weibull"]:
@@ -170,14 +174,15 @@ if param=="msg_drop_rate":
     ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
     ax.ticklabel_format(axis='y',style="plain")
 else:
+    # pass
     plt.ylim(ymin=0)
     # pass
 
 # plt.xscale("log")
-if param=="ir_ratio" and MODE=="e2eMsgTotal":
-    plt.ylim(ymax = 4.9)
-if param == "N" and MODE=="e2eMsgTotal":
-    plt.ylim(ymax = 4)
+if param in ["N","ir_ratio"] and MODE=="e2eMsgTotal":
+    plt.ylim(ymax = 4, ymin=2)
+elif param == "churn_ratio" and MODE=="e2eMsgTotal":
+    plt.ylim(ymax = 5, ymin = 3)
 
 
 mode_display = {

@@ -60,12 +60,12 @@ def getVio(temporal = "weibull" , spatial="zipfian"):
             d[PAIRS][droprate] = [pairs]    
             
 
-    for rate in d[WORST_COUNT].keys():
+    for rate in sorted(d[WORST_COUNT].keys()):
         worsts = np.array(d[WORST_COUNT][rate])
         times = np.array(d[TIME_RATIO][rate])
         pairs = np.array(d[PAIRS][rate])
         print(f"{rate}: worsts - {np.average(worsts)}, timeratio - {np.average(times)}, pairs - {np.average(pairs)}")
-        print("max worst is ", np.max(worsts))
+        # print("max worst is ", np.max(worsts))
 
     return
 

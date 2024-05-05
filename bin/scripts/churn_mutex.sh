@@ -4,7 +4,7 @@ if [ ! -f 'run.sh' ]; then
 fi
 
 
-num_run=1
+num_run=100
 # num_run=50
 num_server=256
 config_name="config.json"

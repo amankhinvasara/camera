@@ -11,7 +11,7 @@ CUT_FIRST = False
 # NORMALIZE = False
 
 # MODE = "waitTimes"
-# MODE = "e2eMsgTotal"
+MODE = "e2eMsgTotal"
 # MODE = "e2eMsgSizeTotal"
 # MODE = "h2hMsgTotal"
 # MODE = "h2hMsgSizeTotal"
@@ -37,11 +37,13 @@ param_json = {
     "drop":"msg_drop_rate"
 }
 
+plt.figure(figsize=(6.4,2.1))
+plt.tight_layout()
+plt.subplots_adjust(bottom=0.21)
 
 temp=""
 d = {}
 slows = 0
-
 
 with open(f"../concurrent/short/{param}.txt") as f:
     for line in f:
@@ -149,7 +151,13 @@ plt.plot(inds,aves,'-o',color="red")
 # print(inds)
 # print(aves)
 
-plt.ylim(ymin=1 if param=="drop" else 0)
+# plt.ylim(ymin=1 if param=="drop" else 0)
+if MODE=="e2eMsgTotal" and param in ["cr","n"]:
+    plt.ylim(ymin=3)
+elif param=="drop":
+    plt.ylim(ymin=1)
+else:
+    plt.ylim(ymin=0)
 
 if param=="drop":
     plt.yscale('log')
