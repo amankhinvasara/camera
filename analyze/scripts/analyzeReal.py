@@ -4,8 +4,8 @@ import numpy as np
 import matplotlib.ticker as mticker
 import sys
 
-# MODE = "waitTimes"
-MODE = "e2eMsgTotal"
+MODE = "waitTimes"
+# MODE = "e2eMsgTotal"
 # MODE = "e2eMsgSizeTotal"
 # MODE = "h2hMsgTotal"
 # MODE = "h2hMsgSizeTotal"
@@ -52,7 +52,9 @@ def graphline(temporal,spatial,param=param):
     d = {}
         
     # with open(f"../{batched_terms[batched]}{'/5delay_rerun' if param!='churn_ratio' else ''}/{folders[param]}/{temporal}_{spatial}.txt") as f:
-    with open(f"../resubmission_data/distributions/{param}/{temporal}_{spatial}.txt") as f:
+    tfname = f"../resubmission_data/distributions/{param}/{temporal}_{spatial}.txt"
+    print(tfname)
+    with open(tfname) as f:
         for line in f:
             if "}{" in line or "num_serv" in line:
                 temp+="}"
