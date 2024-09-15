@@ -10,6 +10,7 @@ import simulator.event.*;
 import utils.*;
 import utils.metric.AlgorithmMetric;
 import utils.metric.NetworkMetric;
+import utils.metric.QualityMetric;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,6 +54,7 @@ public class Server {
              AlgorithmMetric.setFirstExitTime(LogicalTime.time);
              MessagePayload release = new ReleasePayload(currSeqNum,id);
              Message rel_msg = new Message(id,id,release);
+             QualityMetric.updateCount(--LogicalTime.CSct, LogicalTime.time);
              myState = AlgoState.NONE;
              Network.multicast(rel_msg, membership.getAllNodes(true));
 
@@ -205,6 +207,7 @@ public class Server {
         }
         AlgorithmMetric.setSecondEnterTime(LogicalTime.time);
         myState = AlgoState.HELD;
+        QualityMetric.updateCount(++LogicalTime.CSct, LogicalTime.time);
         ExitCritEvent exit = new ExitCritEvent(LogicalTime.time + Config.critDuration, id);
         EventService.addEvent(exit);
     }

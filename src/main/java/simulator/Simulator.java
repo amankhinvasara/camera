@@ -165,6 +165,7 @@ public class Simulator {
         JSONObject obj = new JSONObject();
         obj.put("networkMetric", NetworkMetric.getStat());
         obj.put("algorithmMetric", AlgorithmMetric.getStat());
+        obj.put("qualityMetric", QualityMetric.getStat(LogicalTime.time));
         obj.put("conc_requesters",Config.concRequesters);
         obj.put("msg_drop_rate",Config.msgDropRate);
         obj.put("N", Config.numServers);
