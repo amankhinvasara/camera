@@ -153,6 +153,29 @@ def graphline(temporal,spatial,param=param):
     # plt.plot(inds,aves,label=keystring,color=f"{colors[keystring]}",linestyle=lstyle,linewidth=linewidth)
     # plt.xlabel(inds)
 
+def graphlineWP():
+    inds = []
+    aves = []
+    for line in open("../resubmission_data/distributions/N/wireless_paxos.txt").readlines():
+        comma = line.find(",")
+        inds.append(int(line[:comma]))
+        aves.append(float(line[comma+1:]))
+    inds = np.array(inds); aves = np.array(aves)
+    plt.plot(inds,aves,'-o',label="Wireless Paxos",color="brown")
+    
+    slope, intercept = np.polyfit(inds, aves, 1)
+    print(slope, intercept)
+    x_extrapolate = np.linspace(inds[1], 37)  
+    y_extrapolate = slope * x_extrapolate + intercept
+    plt.plot(x_extrapolate, y_extrapolate, '--')
+    plt.ylim(ymax=y_extrapolate[-1])
+
+
+
+plt.figure(figsize=(6.4,3.8))
+plt.tight_layout()
+plt.subplots_adjust(bottom=0.15)
+
 
 # for temporal in ["exponential"]:
 for temporal in ["exponential","weibull"]:
@@ -161,7 +184,12 @@ for temporal in ["exponential","weibull"]:
             graphline(temporal,spatial)
         except FileNotFoundError:
             print(f"No data for {temporal},{spatial}")
-# graphline("P","zipfian")
+if True:  ## graph wireless paxos line?
+    graphlineWP()
+    # plt.xscale('log')
+
+
+
 
 if param=="msg_drop_rate":
     plt.yscale("log")
