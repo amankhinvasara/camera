@@ -61,6 +61,7 @@ public class Server {
                  Message ok_message = new Message(id,waiting.getId(),ok_p);
                  Network.unicast(ok_message);
              }
+             deferred.clear();
 
              if (queuedReqs>0) {
                 queuedReqs--;
