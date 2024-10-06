@@ -49,4 +49,8 @@ public class RequestPayload extends MessagePayload {
         if (id.getId() > other.id.getId()) return true;
         return false;
     }
+
+    public String toString() {
+        return seqNum + "," + id;
+    }
 }

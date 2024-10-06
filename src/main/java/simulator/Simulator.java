@@ -171,6 +171,8 @@ public class Simulator {
         obj.put("N", Config.numServers);
         obj.put("ir_ratio", Config.irRatio);
         obj.put("churn_ratio",Config.churnRatio);
+        obj.put("spatial", Config.spatialDistro);
+        obj.put("temporal", Config.timeDistro);
 
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonElement je = JsonParser.parseString(obj.toJSONString());

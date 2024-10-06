@@ -30,6 +30,7 @@ public class Server {
     private final Set<RequestPayload> deferred = ConcurrentHashMap.newKeySet();
     private final Set<Address> recentlyOKed = ConcurrentHashMap.newKeySet();
     private final Set<Address> pendingOKs = ConcurrentHashMap.newKeySet();
+    private final Set<Address> recOKs = ConcurrentHashMap.newKeySet();
     private final Set<Long> req_times = ConcurrentHashMap.newKeySet();
 
     // measurement variables
@@ -50,24 +51,27 @@ public class Server {
             initiateRequest();
         } else if (event.getType() == EventType.EXIT_CRIT) {
              // EXIT
-            //  System.out.println("Exiting critical section at node " + id);
+            //  System.out.println(LogicalTime.time + ": Exiting critical section for request " + currSeqNum + " at node " + id );
              AlgorithmMetric.setFirstExitTime(LogicalTime.time);
              MessagePayload release = new ReleasePayload(currSeqNum,id);
              Message rel_msg = new Message(id,id,release);
-             QualityMetric.updateCount(--LogicalTime.CSct, LogicalTime.time);
+             QualityMetric.updateCS(false, id, null);
+             recOKs.clear();
              myState = AlgoState.NONE;
              Network.multicast(rel_msg, membership.getAllNodes(true));
 
              // send OK to deferred folks
              OkPayload ok_p = new OkPayload(recentlyOKed);
              for (RequestPayload waiting : deferred) {
-                 Message ok_message = new Message(id,waiting.getId(),ok_p);
-                 Network.unicast(ok_message);
+                Message ok_message = new Message(id,waiting.getId(),ok_p);
+                Network.unicast(ok_message);
+                // System.out.println(LogicalTime.time + ": Just sent def OK for request " + waiting.toString() + " from server " + id);
              }
+             deferred.clear();
 
              if (queuedReqs>0) {
                 queuedReqs--;
-                initiateRequest();
+                loadRequest(LogicalTime.time + 2);
             }
         }
         else if (event.getType() == EventType.ROUTE_MSG) {
@@ -99,10 +103,13 @@ public class Server {
                 }
             }
 
+            // System.out.print(LogicalTime.time + ": Processing req " + req.toString() + " at server " + id + " with original maxSeen " + maxSeqSeen);
             maxSeqSeen = Math.max(maxSeqSeen,req.getSeqNum());
+            // System.out.println(" and new maxSeqSeen " + maxSeqSeen);
 
             if (myState == AlgoState.HELD || (myState == AlgoState.WAIT && req.isGreaterThan(currRequest))) {
                 // defer incoming request
+                // System.out.println(LogicalTime.time + ": Defering request " + req.getSeqNum() + " from server " + req.getId() + " at node " + id);
                 deferred.add(req);
             }
             else {
@@ -114,13 +121,15 @@ public class Server {
                 // measure base RA performance separately
                 NetworkMetric.RAe2eAdjust(id, req.getId(), recentlyOKed);
 
-                // System.out.println("Just sent OK to " + req.getId() + " from server " + id);
+                // System.out.println(LogicalTime.time + ": Just sent reg OK to " + req.getId() + " from server " + id + " in state " + myState + 
+                //  " and with request tuples " + req.toString() + " and " + (myState==AlgoState.WAIT ? currRequest.toString() : "not waiting"));
             }
 
         } else if (payload.getType() == MessageType.OK) {
+            OkPayload ok = (OkPayload) payload;
             MessagePayload req = new RequestPayload(currSeqNum,id,AlgorithmPath.FAST);
             // System.out.println("Size of recentlyOKed upon receiving the OK message is " + ((OkPayload) payload).getRecentlyOKed().size());
-            for (Address node : ((OkPayload) payload).getRecentlyOKed()) {
+            for (Address node : ok.getRecentlyOKed()) {
                 if (!membership.getAllNodes(false).contains(node)) {
                     // we don't know ab some node that was recentlyOKed
                     pendingOKs.add(node);
@@ -129,13 +138,16 @@ public class Server {
                     Network.unicast(req_msg);
                 }
             }
+            // System.out.println(LogicalTime.time + ": Just received OK from " + msg.getSrc().getId() + " at server " + id) ;
             pendingOKs.remove(msg.getSrc());
+            recOKs.add(msg.getSrc());
             // System.out.println("Now only waiting for " + pendingOKs.size() + " OKs");
             
             // includes running critical section and sending out releases
             // System.out.println("Size of pendingOks is "+String.valueOf(pendingOKs.size()));
             if (pendingOKs.isEmpty() && myState == AlgoState.WAIT) {
                 // execute the critical section
+                // System.out.println(LogicalTime.time + ": Entering critical section for request " + currSeqNum + " at node " + id);
                 executeCriticalSection();
             }
         } else if (payload.getType() == MessageType.RELEASE) {
@@ -172,6 +184,7 @@ public class Server {
         maxSeqSeen++;
         currSeqNum = maxSeqSeen;
         pendingOKs.clear();
+        recOKs.clear();
         for (Address i : membership.getAllNodes(true)) {
             pendingOKs.add(i);
         }
@@ -185,7 +198,7 @@ public class Server {
             Message msg = new Message(id, ip, currRequest);
             Network.unicast(msg);
         }
-
+        // System.out.println(LogicalTime.time + ": initiating request " + currSeqNum + " at server " + id);
     }
 
     public void updateMembership() {
@@ -198,7 +211,6 @@ public class Server {
     }
 
     private void executeCriticalSection() {
-        // System.out.println("Entering critical section at node " + id);
         AlgorithmMetric.addWaitTime(LogicalTime.time - initTime);
         if (Config.batched) {
             for (Long time : req_times) {
@@ -207,7 +219,7 @@ public class Server {
         }
         AlgorithmMetric.setSecondEnterTime(LogicalTime.time);
         myState = AlgoState.HELD;
-        QualityMetric.updateCount(++LogicalTime.CSct, LogicalTime.time);
+        QualityMetric.updateCS(true, id, recOKs);
         ExitCritEvent exit = new ExitCritEvent(LogicalTime.time + Config.critDuration, id);
         EventService.addEvent(exit);
     }
