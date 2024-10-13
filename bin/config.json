@@ -1,5 +1,5 @@
 {
-  "membership_file": "../../Inconsistency-on-Medley/bin/membership/",
+  "membership_file": "../../medley_mods/bin/membership/",
   "topology_file": "topo/random256.txt",
   "stats_file": "stats.json",
   "num_servers": "256",
