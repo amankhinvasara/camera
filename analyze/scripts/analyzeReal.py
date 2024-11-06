@@ -10,6 +10,10 @@ MODE = "waitTimes"
 # MODE = "h2hMsgTotal"
 # MODE = "h2hMsgSizeTotal"
 
+NORMALIZE = True
+
+WPAXOS = True and MODE=="waitTimes"
+
 param = sys.argv[1]
 batched = sys.argv[2]
 param_options = ["ir_ratio","msg_drop_rate","N","churn_ratio"]
@@ -52,13 +56,17 @@ def graphline(temporal,spatial,param=param):
     d = {}
         
     # with open(f"../{batched_terms[batched]}{'/5delay_rerun' if param!='churn_ratio' else ''}/{folders[param]}/{temporal}_{spatial}.txt") as f:
-    tfname = f"../resubmission_data/distributions/{param}/{temporal}_{spatial}.txt"
+    # tfname = f"../../../../camera_clean/camera/analyze/resubmission_data/distributions/{param}/{temporal}_{spatial}.txt"
+    tfname = f"../final_reruns/{param}/{temporal}_{spatial}.txt"
     print(tfname)
     with open(tfname) as f:
         for line in f:
             if "}{" in line or "num_serv" in line:
                 temp+="}"
-                a = json.loads(temp)
+                try:
+                    a = json.loads(temp)
+                except:
+                    break
                 if "run_num" in line:
                     temp = ""
                 else:
@@ -74,6 +82,8 @@ def graphline(temporal,spatial,param=param):
                 else:
                     # norm_ave = a['networkMetric'][MODE] / len(lst)
                     norm_ave = a['networkMetric'][MODE] / n / len(lst)
+                if NORMALIZE:
+                    norm_ave/=n
                 
                 cr = float(a[param])
                 if cr in d:
@@ -84,19 +94,27 @@ def graphline(temporal,spatial,param=param):
             else:
                 temp+=line
 
-        a = json.loads(temp)
-        temp = ""
-        lst = a['algorithmMetric']['waitTimes']
-        n = int(a['N'])
-        if MODE == "waitTimes":
-            if param == "churn_ratio":
-                norm_ave = sum(lst[:50])/50
+        
+        try:
+            a = json.loads(temp)
+            temp = ""
+            lst = a['algorithmMetric']['waitTimes']
+            n = int(a['N'])
+            if MODE == "waitTimes":
+                if param == "churn_ratio":
+                    norm_ave = sum(lst[:50])/50
+                else:
+                    norm_ave = sum(lst)/(len(lst))
+                norm_ave/=1000 # ms to seconds
+                if NORMALIZE_WAITS:
+                    norm_ave/=n
             else:
-                norm_ave = sum(lst)/(len(lst))
-            norm_ave/=1000 # ms to seconds
-        else:
-            norm_ave = a['networkMetric'][MODE] / n / len(lst)
-            # norm_ave = a['networkMetric'][MODE] / len(lst)
+                norm_ave = a['networkMetric'][MODE] / n / len(lst)
+                # norm_ave = a['networkMetric'][MODE] / len(lst)
+        except:
+            print("skipping last")
+            # print(temp)
+            # exit(1)
 
 
         cr = float(a[param])
@@ -129,12 +147,22 @@ def graphline(temporal,spatial,param=param):
 
     # print(maxs[-3:])
 
+    sorted_inds_aves = sorted(zip(inds, aves), key=lambda x: x[0])
+
+    # Unzip the sorted list back into two separate lists
+    inds_sorted, aves_sorted = zip(*sorted_inds_aves)
+
+    # Convert them back to lists if needed
+    inds = list(inds_sorted)
+    aves = list(aves_sorted)
+
     inds = np.array(inds)
     # maxs = np.array(maxs)
     # _75ths = np.array(_75ths)
     # _25ths = np.array(_25ths)
     # mins = np.array(mins)
     aves = np.array(aves)
+
 
     # plt.bar(inds,maxs-_75ths,width=thin,bottom=_75ths)
     # plt.bar(inds,_75ths-_25ths,width=thick,bottom=_25ths)
@@ -151,7 +179,7 @@ def graphline(temporal,spatial,param=param):
     if temporal=="weibull" and spatial=="zipfian":
         print(inds)
         print(aves)
-    plt.plot(inds,aves,'-o',label=keystring,color=f"{colors[keystring]}",)
+    plt.plot(inds,aves,'-o',label=f"Camera:{keystring}",color=f"{colors[keystring]}",)
     # plt.plot(inds,aves,label=keystring,color=f"{colors[keystring]}",linestyle=lstyle,linewidth=linewidth)
     # plt.xlabel(inds)
 
@@ -163,14 +191,17 @@ def graphlineWP():
         inds.append(int(line[:comma]))
         aves.append(float(line[comma+1:]))
     inds = np.array(inds); aves = np.array(aves)
+    if NORMALIZE:
+        aves/=inds
     plt.plot(inds,aves,'-o',label="Wireless Paxos",color="brown")
+    print(inds)
     
     slope, intercept = np.polyfit(inds, aves, 1)
     print(slope, intercept)
     x_extrapolate = np.linspace(inds[1], 37)  
     y_extrapolate = slope * x_extrapolate + intercept
-    plt.plot(x_extrapolate, y_extrapolate, '--')
-    plt.ylim(ymax=y_extrapolate[-1])
+    # plt.plot(x_extrapolate, y_extrapolate, '--')
+    # plt.ylim(ymax=y_extrapolate[-1])
 
 
 
@@ -180,13 +211,16 @@ plt.subplots_adjust(bottom=0.15)
 
 
 # for temporal in ["exponential"]:
+spatials = ["uniform","zipfian"]
+if WPAXOS:
+    spatials.remove("uniform")
 for temporal in ["exponential","weibull"]:
-    for spatial in ["uniform","zipfian"]:
+    for spatial in spatials:
         try:
             graphline(temporal,spatial)
         except FileNotFoundError:
             print(f"No data for {temporal},{spatial}")
-if True:  ## graph wireless paxos line?
+if WPAXOS:  ## graph wireless paxos line?
     graphlineWP()
     # plt.xscale('log')
 
@@ -205,10 +239,10 @@ else:
     # pass
 
 # plt.xscale("log")
-if param in ["N","ir_ratio"] and MODE=="e2eMsgTotal":
-    plt.ylim(ymax = 4, ymin=2)
-elif param == "churn_ratio" and MODE=="e2eMsgTotal":
-    plt.ylim(ymax = 5, ymin = 3)
+# if param in ["N","ir_ratio"] and MODE=="e2eMsgTotal":
+#     plt.ylim(ymax = 6, ymin=2)
+# elif param == "churn_ratio" and MODE=="e2eMsgTotal":
+#     plt.ylim(ymax = 5, ymin = 3)
 
 
 mode_display = {
@@ -224,6 +258,6 @@ plt.legend()
 plt.title(f"{mode_display[MODE]} Against {param_display[param]}")
 plt.show()
 # plt.savefig(f"../img/test2.png")
-plt.savefig(f"../img/test.png")
+plt.savefig(f"../img/{param}.png")
 
 # print(f"slows: {slows}")

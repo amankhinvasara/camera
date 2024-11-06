@@ -27,13 +27,13 @@ param_options = ["cr","n","drop"]
 
 param_display = {
     "cr":"Concurrent Requesters",
-    "n" : "System Size",
+    "size" : "System Size",
     "drop":"Message Drop Rate"
 }
 
 param_json = {
     "cr":"conc_requesters",
-    "n" : "N",
+    "size" : "N",
     "drop":"msg_drop_rate"
 }
 
@@ -45,7 +45,7 @@ temp=""
 d = {}
 slows = 0
 
-with open(f"../concurrent/short/{param}.txt") as f:
+with open(f"../final_reruns/highconc/{param}_results.txt") as f:
     for line in f:
         if "}{" in line or "num_serv" in line:
             temp+="}"
@@ -147,6 +147,7 @@ plt.bar(inds,_75ths-_25ths,width=thick,bottom=_25ths)
 plt.bar(inds,_25ths-mins,width=thin,bottom=mins)
 # plt.scatter(inds,aves)
 plt.plot(inds,aves,'-o',color="red")
+print(inds)
 
 # print(inds)
 # print(aves)
@@ -154,6 +155,7 @@ plt.plot(inds,aves,'-o',color="red")
 # plt.ylim(ymin=1 if param=="drop" else 0)
 if MODE=="e2eMsgTotal" and param in ["cr","n"]:
     plt.ylim(ymin=3)
+    # pass
 elif param=="drop":
     plt.ylim(ymin=1)
 else:

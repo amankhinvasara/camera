@@ -1,5 +1,5 @@
 {
-  "membership_file": "../../Inconsistency-on-Medley/bin/membership/",
+  "membership_file": "../../../ECE499/Inconsistency-on-Medley/bin/membership/",
   "topology_file": "topo/random256.txt",
   "stats_file": "stats.json",
   "num_servers": "256",
@@ -14,9 +14,9 @@
   "verbose": "0",
   "from_trace": "true",
   "time_distro": "weibull",
-  "spatial_distro": "zipfian",
-  "ir_ratio": "1.0",
+  "spatial_distro": "uniform",
+  "ir_ratio": "3.0",
   "batched": "false",
   "churn_ratio": "0.5",
-  "use_churn": "true"
+  "use_churn": "false"
 }

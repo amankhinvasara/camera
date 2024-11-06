@@ -7,7 +7,7 @@ import sys
 
 def getPair(temporal,spatial):
     temp=""
-    with open(f"../resubmission_data/distributions/no_drop/{temporal}_{spatial}.txt") as f:
+    with open(f"../final_reruns/ir_ratio/{temporal}_{spatial}.txt") as f:
         RAs = []
         normals = []
         for line in f:
